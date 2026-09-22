@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "id": "program_demo",
+  "packageName": "main",
+  "entryFunctionId": "fn_main",
+  "functions": [
+    {
+      "id": "fn_main",
+      "kind": "main",
+      "parentFunctionId": null,
+      "body": {
+        "id": "block_main",
+        "statements": [
+          {
+            "id": "stmt_make",
+            "kind": "make_channel",
+            "symbolId": "sym_ch",
+            "capacity": 0
+          },
+          {
+            "id": "stmt_spawn",
+            "kind": "spawn",
+            "functionId": "fn_sender"
+          },
+          {
+            "id": "stmt_receive",
+            "kind": "receive",
+            "channelSymbolId": "sym_ch",
+            "bindings": ["sym_value"]
+          },
+          {
+            "id": "stmt_print",
+            "kind": "print",
+            "value": {
+              "id": "expr_print_value",
+              "kind": "variable",
+              "symbolId": "sym_value"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "fn_sender",
+      "kind": "goroutine",
+      "parentFunctionId": "fn_main",
+      "body": {
+        "id": "block_sender",
+        "statements": [
+          {
+            "id": "stmt_send",
+            "kind": "send",
+            "channelSymbolId": "sym_ch",
+            "value": {
+              "id": "expr_42",
+              "kind": "int_literal",
+              "value": "42"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "symbols": [
+    {
+      "id": "sym_ch",
+      "name": "ch",
+      "type": "chan int",
+      "scopeId": "block_main"
+    },
+    {
+      "id": "sym_value",
+      "name": "value",
+      "type": "int",
+      "scopeId": "block_main"
+    }
+  ]
+}
