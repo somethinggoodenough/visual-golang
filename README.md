@@ -2,19 +2,13 @@
 
 [简体中文](README.md) | **English**
 
-## Why I Started This Project · 项目初衷
+## Why I Started This Project
 
 **English**
 
 After taking EECS 491, I started picturing Go’s channels and goroutines as a little network of pipes: goroutines doing their own work, channels connecting them, and data flowing from place to place. That image stuck with me, and I wondered if I could turn it into a small visualization—something I could look at, rearrange, and connect to get a better feel for how it all fits together.
 
 This project grew out of that little idea. It’s still small, but over time I’d love to make it more complete and more fun, turning the process of exploring Go concurrency into something hands-on and enjoyable.
-
-**中文**
-
-学完 EECS 491 之后，我突然觉得 Go 里的 channel、goroutine 这些概念很有画面感：一个个 goroutine 各自忙碌，channel 就像把它们连接起来的管道，数据在其中流来流去。于是我就想，能不能做一个小小的可视化，把这些连接和交互画出来，让我能看一看、拖一拖、连一连，更直观地理解它们？
-
-这个项目就从这个小念头开始。现在它还很小，未来我希望慢慢把它做得更完整、更好玩，让探索 Go 并发也成为一件可以动手尝试、享受其中的事。
 
 ## Overview
 
