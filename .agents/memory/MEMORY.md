@@ -1,2 +1,3 @@
 - [Replit toolchain order](toolchain-order.md) — multiple Go modules can select the older compiler; keep only a compatible one when local toolchains are enforced.
 - [Temporary test port mappings](test-port-mapping.md) — browser-test ports may reappear after restarting workflows; clean them after the final restart.
+- [GitHub connector and Git pushes](github-connector-push.md) — connector REST access does not necessarily authenticate Git CLI pushes.
