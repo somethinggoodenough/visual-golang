@@ -1,0 +1,252 @@
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+
+export type Language = 'zh' | 'en';
+
+// Chinese is the original interface language. Keys are the original copy so
+// stored notices and errors can be translated even after the language changes.
+const english: Record<string, string> = {
+  '并发，从结构开始。': 'Concurrency starts with structure.',
+  '本地工作区': 'Local workspace',
+  '存在未应用草稿': 'Unapplied draft',
+  '本地服务已连接': 'Local service connected',
+  '服务离线': 'Service offline',
+  '正在连接': 'Connecting',
+  '使用帮助': 'Help',
+  '切换语言': 'Change language',
+  '关闭帮助': 'Close help',
+  '项目操作': 'Project actions',
+  '新建': 'New',
+  '打开示例': 'Open example',
+  '导入 Go': 'Import Go',
+  '打开项目': 'Open project',
+  '撤销': 'Undo',
+  '重做': 'Redo',
+  '撤销 ⌘Z': 'Undo ⌘Z',
+  '重做 ⇧⌘Z': 'Redo ⇧⌘Z',
+  '导出 Go': 'Export Go',
+  '保存项目': 'Save project',
+  '编译验证': 'Validate build',
+  '导入 Go 文件': 'Import Go file',
+  '打开项目文件': 'Open project file',
+  '操作工具箱': 'Operation toolbox',
+  '添加到执行区域': 'Add to execution area',
+  '目标函数': 'Target function',
+  '插入位置': 'Insert position',
+  '末尾': 'At end',
+  '创建 Channel': 'Create channel',
+  '启动 Goroutine': 'Start goroutine',
+  '发送': 'Send',
+  '接收': 'Receive',
+  '关闭 Channel': 'Close channel',
+  '声明变量': 'Declare variable',
+  '打印': 'Print',
+  '返回': 'Return',
+  '点击添加，或拖入执行区域。': 'Click to add, or drag into an execution area.',
+  '添加后在属性中配置操作。': 'Configure the operation in Properties.',
+  'Go 语言子集': 'Go language subset',
+  '程序结构': 'Program structure',
+  '图形草稿 · 尚未应用到代码': 'Graph draft · not applied to code',
+  '应用代码修改': 'Apply code changes',
+  '应用图形修改': 'Apply graph changes',
+  '已同步': 'Synced',
+  '生成将规范化排版；原始源码副本随项目保留。': 'Generating will normalize formatting; the original source remains in the project.',
+  '应用通过检查后，另一侧视图才会更新。': 'The other view updates only after changes pass validation.',
+  '放弃草稿': 'Discard draft',
+  '源码': 'Source',
+  '属性': 'Properties',
+  '未应用': 'Unapplied',
+  '已应用源码': 'Applied source',
+  '图形草稿编辑中，显示已应用源码。': 'Editing a graph draft. Showing applied source.',
+  '编辑源码': 'Edit source',
+  'Go 源码': 'Go source',
+  '行': 'lines',
+  '导出原始源码副本': 'Export original source copy',
+  '结构编辑，不执行用户程序': 'Structural editing; user programs are not run',
+  '诊断': 'Diagnostics',
+  '正在调用 Go 编译器…': 'Running Go compiler…',
+  '正在验证程序…': 'Validating program…',
+  '所有检查结果将在这里显示': 'Validation results will appear here',
+  '真实 Go 工具链编译通过。编译成功不代表程序不会阻塞。': 'Compiled with the real Go toolchain. A successful build does not guarantee the program will not block.',
+  '导入、生成和编译诊断会关联到对应节点与源码位置。': 'Import, generation, and build diagnostics link to nodes and source locations.',
+  '后端未连接': 'Backend disconnected',
+  'Go 工具链未安装': 'Go toolchain unavailable',
+  '检查工具链…': 'Checking toolchain…',
+  '单文件 · package main': 'Single file · package main',
+  '本地编译 · 不运行': 'Local compilation · no execution',
+  '⌘ / Ctrl + Enter 应用修改': '⌘ / Ctrl + Enter to apply changes',
+  '关闭提示': 'Dismiss notification',
+  '保留当前草稿': 'Keep draft',
+  '放弃草稿并继续': 'Discard draft and continue',
+  'GO CANVAS · 工作流': 'GO CANVAS · WORKFLOW',
+  '从源码到图形，再回到源码。': 'From source to graph and back again.',
+  '导入或构建': 'Import or build',
+  '打开示例、导入 Go，或新建后从工具箱添加操作。目标函数和插入位置决定程序结构。': 'Open an example, import Go code, or create a new program and add operations from the toolbox. The target function and insertion position determine its structure.',
+  '编辑与连接': 'Edit and connect',
+  '选中节点修改属性。将 Channel 资源端口连接到操作来改变绑定；用属性面板的上移、下移排序。': 'Select a node to edit its properties. Connect a channel resource port to an operation to change its binding; use Move up and Move down in Properties to reorder operations.',
+  '应用与验证': 'Apply and validate',
+  '应用修改会运行语法和类型检查。编译验证调用本机 Go 工具链，不运行代码。': 'Applying changes runs syntax and type checks. Validate build invokes the local Go toolchain without running the code.',
+  '保存工作': 'Save your work',
+  'Go 文件保存源码；项目文件还保存节点 ID、坐标、折叠状态和视口。先应用或放弃草稿再保存。': 'A Go file saves source code. A project file also saves node IDs, positions, collapsed state, and viewport. Apply or discard drafts before saving.',
+  '支持 int Channel、匿名 Goroutine、收发、关闭、int/bool 变量、打印与返回。其他 Go 语法会显示具体诊断。': 'Supports int channels, anonymous goroutines, send, receive, close, int/bool variables, print, and return. Other Go syntax produces specific diagnostics.',
+  '切换到图形编辑？': 'Switch to graph editing?',
+  '当前代码草稿尚未应用。可以保留草稿继续编辑，或放弃它后修改图形。': 'Your code draft has not been applied. Keep editing it, or discard it to edit the graph.',
+  '源码已解析，图形与代码同步。': 'Source parsed; graph and code are in sync.',
+  '已打开程序，可以选择节点开始编辑。': 'Program opened. Select a node to start editing.',
+  '代码修改已应用。': 'Code changes applied.',
+  '包含 v0 尚未支持的 Go 语法；保留最近有效图形。': 'Go syntax not yet supported in v0; the last valid graph is preserved.',
+  '代码未通过检查；保留最近有效图形。': 'Code failed validation; the last valid graph is preserved.',
+  '请求失败': 'Request failed',
+  '本地服务不可达。请确认 Go 后端正在运行，再重试。': 'Local service unavailable. Check that the Go backend is running and try again.',
+  '请求未完成，当前模型与草稿已保留。': 'Request did not complete. The current model and draft are preserved.',
+  '图形修改已应用，Go 代码已通过生成与类型检查。': 'Graph changes applied; Go code passed generation and type checks.',
+  '图形修改已应用，Go 源码已更新。': 'Graph changes applied; Go source updated.',
+  '图形草稿未通过检查，请按诊断修正后重新应用。': 'Graph draft failed validation. Fix the diagnostics and apply again.',
+  '请先应用修改，再编译当前程序。': 'Apply changes before compiling the current program.',
+  '编译通过': 'Build passed',
+  '编译失败': 'Build failed',
+  '编译超时': 'Build timed out',
+  'Go 工具链不可用': 'Go toolchain unavailable',
+  '当前修改尚未应用': 'Changes not applied',
+  '继续将放弃当前语义草稿。已应用程序也将被所选文件或示例替换。': 'Continuing discards the current draft and replaces the applied program with the selected file or example.',
+  '项目一致性验证通过，模型、布局与源码已恢复。': 'Project validated; model, layout, and source restored.',
+  '项目已恢复，布局与节点 ID 已保留。': 'Project restored with layout and node IDs preserved.',
+  '项目一致性验证失败，当前工作区未被替换。': 'Project validation failed; the current workspace was not replaced.',
+  '请先应用或放弃草稿，再保存项目。': 'Apply or discard the draft before saving the project.',
+  '请先连接后端并应用程序，再保存项目。': 'Connect to the backend and apply the program before saving.',
+  '已保存 main.goviz.json': 'Saved main.goviz.json',
+  '请先应用或放弃草稿，再导出 Go。': 'Apply or discard the draft before exporting Go.',
+  '切换到代码编辑？': 'Switch to code editing?',
+  '当前图形草稿尚未应用。放弃草稿后，可以直接编辑 Go 源码。': 'Your graph draft has not been applied. Discard it to edit Go source directly.',
+  '请先应用或放弃代码草稿，再编辑图形。': 'Apply or discard the code draft before editing the graph.',
+  '请先应用或放弃图形草稿，再编辑代码。': 'Apply or discard the graph draft before editing code.',
+  '请选择操作所在的函数。': 'Select the function containing the operation.',
+  '该操作已不存在。': 'This operation no longer exists.',
+  '此 Channel 在该操作的词法位置不可见；请检查声明顺序与作用域。': 'This channel is not visible at this operation. Check declaration order and scope.',
+  '未绑定': 'Unbound',
+  '执行区域': 'Execution area',
+  '程序入口。main 返回时，Go 程序结束。': 'Program entry point. The Go program ends when main returns.',
+  '通过 go 语句创建的匿名函数。可捕获外层 Channel。': 'Anonymous function started with go. It may capture channels from an outer scope.',
+  '操作数': 'Operations',
+  '执行顺序': 'Execution order',
+  '删除 Goroutine 及其操作': 'Delete goroutine and its operations',
+  '让并发结构清晰可见': 'See the concurrency structure',
+  '选择一个操作，编辑其值与绑定。': 'Select an operation to edit its values and bindings.',
+  '选择执行区域，查看语句顺序。': 'Select an execution area to see statement order.',
+  'Channel 连线表示资源引用，': 'Channel lines represent resource references,',
+  '不代表消息的确定配对或执行先后。': 'not guaranteed message pairs or execution order.',
+  '变量名称': 'Variable name',
+  '表达式类型': 'Expression type',
+  'int · 整数字面量': 'int · integer literal',
+  'bool · 布尔字面量': 'bool · boolean literal',
+  '引用局部变量': 'Reference local variable',
+  '发送值': 'Value to send',
+  '整数值': 'Integer value',
+  '以十进制字符串保存，保留整数精度。': 'Stored as a decimal string to preserve integer precision.',
+  '布尔值': 'Boolean value',
+  '引用变量': 'Reference variable',
+  '请选择变量': 'Select a variable',
+  '不可见 ·': 'Not visible ·',
+  'CHANNEL 资源 / 创建操作': 'CHANNEL RESOURCE / CREATION',
+  '操作属性': 'Operation properties',
+  '代码草稿编辑中。先应用或放弃草稿即可修改属性。': 'Editing a code draft. Apply or discard it to change properties.',
+  '元素类型': 'Element type',
+  'Channel 元素类型': 'Channel element type',
+  '缓冲容量': 'Buffer capacity',
+  '↗ 定位 Channel 创建语句': '↗ Find channel creation',
+  'Channel 绑定': 'Channel binding',
+  '连接或选择 Channel': 'Connect or select a channel',
+  '当前作用域': 'Current scope',
+  '外层捕获': 'Captured from outer scope',
+  '也可从资源节点的端口拖动连接。': 'You can also drag a connection from a resource node port.',
+  '接收绑定': 'Receive bindings',
+  '仅接收 · 忽略结果': 'Receive only · ignore result',
+  '接收变量': 'Receive variable',
+  '接收状态变量': 'Receive status variable',
+  '使用 _ 忽略一个结果；至少保留一个新变量。': 'Use _ to ignore a result; keep at least one new variable.',
+  '选择 Goroutine 函数体': 'Select goroutine body',
+  '语句顺序': 'Statement order',
+  '上移': 'Move up',
+  '下移': 'Move down',
+  '删除操作与 Goroutine': 'Delete operation and goroutine',
+  '删除操作': 'Delete operation',
+  '从 Channel 资源拖动连接到此端口': 'Drag from a channel resource to this port',
+  '展开函数': 'Expand function',
+  '折叠函数': 'Collapse function',
+  '从左侧添加第一个操作': 'Add the first operation from the left',
+  '语句按编号依次执行': 'Statements execute in numbered order',
+  '拖动到发送、接收或关闭操作以绑定 Channel': 'Drag to a send, receive, or close operation to bind the channel',
+  '程序入口 · main goroutine': 'Program entry · main goroutine',
+  'go · 创建': 'go · spawn',
+  '创建位置': 'Declared here',
+  '无缓冲 · unbuffered': 'Unbuffered',
+  '请先应用或放弃代码草稿，再编辑 Channel 绑定。': 'Apply or discard the code draft before editing channel bindings.',
+  '请将 Channel 资源的圆形端口连接到发送、接收或关闭操作。': 'Connect the round port of a channel resource to a send, receive, or close operation.',
+  '并发创建': 'Spawn',
+  'Channel 引用': 'Channel reference',
+  '拖动调整布局 · 通过编号调整执行顺序': 'Drag to arrange · use numbers to change execution order',
+  '本地服务不可达': 'Local service unavailable',
+  '服务返回了无法识别的响应。': 'Service returned an unrecognized response.',
+  '源码不能超过 1 MiB。': 'Source cannot exceed 1 MiB.',
+  '缺少项目对象。': 'Project object is missing.',
+  '不支持的项目版本。': 'Unsupported project version.',
+  'API 不存在。': 'API not found.',
+  '服务仅允许本地访问。': 'Service only allows local access.',
+  '请求来源不受支持。': 'Request origin is not supported.',
+  '缺少 IR 对象。': 'IR object is missing.',
+  '不支持的 IR 版本。': 'Unsupported IR version.',
+  '请求必须使用 application/json。': 'Request must use application/json.',
+  'JSON 后有额外数据': 'Extra data after JSON.',
+  '必须提供长度为 1–200 的 requestId。': 'A requestId of 1–200 characters is required.',
+  '修订号必须是非负安全整数。': 'Revision must be a non-negative safe integer.',
+  '请求体超过 4 MiB。': 'Request body exceeds 4 MiB.',
+  '未找到可用的 Go 工具链。请从 https://go.dev/dl/ 安装 Go，并重启本地服务。': 'Go toolchain not found. Install Go from https://go.dev/dl/ and restart the local service.',
+  '等待编译超时。': 'Timed out waiting to compile.',
+  '不支持的项目文件版本；当前仅支持 1.0。': 'Unsupported project file version; only 1.0 is supported.',
+  '项目修订号必须是非负安全整数。': 'Project revision must be a non-negative safe integer.',
+  '原始源码副本超过大小限制。': 'Original source copy exceeds the size limit.',
+  '项目源码无法转换为受支持的程序。请单独导入 Go 源码查看诊断。': 'Project source cannot be converted to a supported program. Import the Go source separately to see diagnostics.',
+  '项目源码与 IR 不一致，未加载项目。': 'Project source and IR do not match; project not loaded.',
+  '项目 sourceHash 与源码内容不匹配。': 'Project sourceHash does not match the source.',
+  '画布视口参数无效。': 'Invalid canvas viewport.',
+};
+
+function translate(language: Language, text: string): string {
+  if (language === 'zh') return text;
+  if (english[text]) return english[text];
+  const build = /^(编译通过|编译失败|编译超时|Go 工具链不可用)( · .+)$/.exec(text);
+  if (build) return english[build[1]] + build[2];
+  const http = /^服务请求失败（HTTP (\d+)）$/.exec(text);
+  if (http) return `Service request failed (HTTP ${http[1]})`;
+  const limit = /^布局包含无效节点引用或坐标：(.+)$/.exec(text);
+  if (limit) return `Layout contains an invalid node reference or position: ${limit[1]}`;
+  const collapsed = /^展开状态包含无效节点引用：(.+)$/.exec(text);
+  if (collapsed) return `Collapsed state contains an invalid node reference: ${collapsed[1]}`;
+  const timeout = /^Go 编译超过 (.+) 或请求已取消。$/.exec(text);
+  if (timeout) return `Go compilation exceeded ${timeout[1]} or the request was cancelled.`;
+  const refs = /^无法删除：仍有 (\d+) 个操作引用该声明（(.+)）。请先删除或重新绑定引用。$/.exec(text);
+  if (refs) return `Cannot delete: ${refs[1]} operations still refer to this declaration (${refs[2].replaceAll('、', ', ')}). Delete or rebind them first.`;
+  return text;
+}
+
+type LanguageContextValue = { language: Language; setLanguage: (language: Language) => void; t: (text: string) => string };
+const LanguageContext = createContext<LanguageContextValue | null>(null);
+const storageKey = 'go-canvas-language';
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguage] = useState<Language>(() => {
+    try { return localStorage.getItem(storageKey) === 'en' ? 'en' : 'zh'; }
+    catch { return 'zh'; }
+  });
+  useEffect(() => {
+    document.documentElement.lang = language === 'en' ? 'en' : 'zh-CN';
+    try { localStorage.setItem(storageKey, language); } catch { /* private browsing may block storage */ }
+  }, [language]);
+  const value = useMemo(() => ({ language, setLanguage, t: (text: string) => translate(language, text) }), [language]);
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error('LanguageProvider is missing');
+  return context;
+}

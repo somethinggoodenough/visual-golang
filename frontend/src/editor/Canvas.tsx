@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Background, BackgroundVariant, Controls, Handle, MarkerType, Position, ReactFlow, applyNodeChanges, useNodesInitialized, useReactFlow, type Connection, type Edge, type Node, type NodeProps, type ReactFlowInstance } from '@xyflow/react';
 import { ArrowDownToLine, ArrowUpFromLine, Box, ChevronDown, ChevronRight, CircleStop, Code2, GitFork, Layers, LogOut, Terminal } from 'lucide-react';
+import { useLanguage } from '../i18n';
 import { labels, ownValue, statementLabel, type Layout, type ProgramIR, type StatementKind } from '../model/types';
 import '@xyflow/react/dist/style.css';
 
@@ -8,30 +9,33 @@ const icons = { make_channel: Box, spawn: GitFork, send: ArrowUpFromLine, receiv
 interface VisualData extends Record<string, unknown> { title: string; detail: string; kind?: StatementKind; index?: number; collapsed?: boolean; onToggle?: () => void; count?: number }
 type VisualNode = Node<VisualData>;
 function OperationNode({ data, selected }: NodeProps<VisualNode>) {
+  const { t } = useLanguage();
   const Icon = icons[data.kind!];
   return <div className={`operation-node ${data.kind} ${selected ? 'is-selected' : ''}`}>
     <Handle type="target" position={Position.Top} id="sequence-in" isConnectable={false} className="sequence-handle" />
     <div className="operation-heading"><span className="operation-icon"><Icon size={15} /></span><span>{data.title}</span><small>{String(data.index).padStart(2, '0')}</small></div>
     <code>{data.detail}</code>
     <Handle type="source" position={Position.Bottom} id="sequence-out" isConnectable={false} className="sequence-handle" />
-    {['send', 'receive', 'close'].includes(data.kind!) && <Handle type="target" position={Position.Right} id="channel" className="channel-handle" title="从 Channel 资源拖动连接到此端口" />}
+    {['send', 'receive', 'close'].includes(data.kind!) && <Handle type="target" position={Position.Right} id="channel" className="channel-handle" title={t('从 Channel 资源拖动连接到此端口')} />}
     {data.kind === 'make_channel' && <Handle type="target" position={Position.Left} id="declaration" isConnectable={false} className="channel-handle" />}
     {data.kind === 'spawn' && <Handle type="source" position={Position.Right} id="spawn" isConnectable={false} className="spawn-handle" />}
   </div>;
 }
 function FunctionNode({ data, selected }: NodeProps<VisualNode>) {
+  const { language, t } = useLanguage();
   return <div className={`function-node ${selected ? 'is-selected' : ''}`}>
-    <div className="function-heading"><span className={`function-mark ${data.title === 'main' ? '' : 'purple'}`}>ƒ</span><div><strong>{data.title}</strong><small>{data.detail}</small></div><button className="nodrag icon-button" title={data.collapsed ? '展开函数' : '折叠函数'} onClick={data.onToggle}>{data.collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}</button></div>
-    <span className="function-count">{data.count} 个操作</span>
-    {data.count === 0 && !data.collapsed && <div className="empty-function">从左侧添加第一个操作<br/><span>语句按编号依次执行</span></div>}
+    <div className="function-heading"><span className={`function-mark ${data.title === 'main' ? '' : 'purple'}`}>ƒ</span><div><strong>{data.title}</strong><small>{data.detail}</small></div><button className="nodrag icon-button" title={t(data.collapsed ? '展开函数' : '折叠函数')} onClick={data.onToggle}>{data.collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}</button></div>
+    <span className="function-count">{language === 'en' ? `${data.count} operations` : `${data.count} 个操作`}</span>
+    {data.count === 0 && !data.collapsed && <div className="empty-function">{t('从左侧添加第一个操作')}<br/><span>{t('语句按编号依次执行')}</span></div>}
     <Handle type="target" position={Position.Left} id="spawn-in" isConnectable={false} className="spawn-handle" style={{ top: 30 }} />
   </div>;
 }
 function ResourceNode({ data, selected }: NodeProps<VisualNode>) {
+  const { language, t } = useLanguage();
   return <div className={`resource-node ${selected ? 'is-selected' : ''}`}>
     <div className="resource-heading"><span className="resource-icon"><Layers size={17} /></span><strong>{data.title}</strong><span className="tiny-badge">chan int</span></div>
-    <div className="resource-detail"><span>{data.detail}</span><span>{data.count} 个引用</span></div>
-    <Handle type="source" position={Position.Right} id="channel" className="channel-handle" title="拖动到发送、接收或关闭操作以绑定 Channel" />
+    <div className="resource-detail"><span>{data.detail}</span><span>{language === 'en' ? `${data.count} references` : `${data.count} 个引用`}</span></div>
+    <Handle type="source" position={Position.Right} id="channel" className="channel-handle" title={t('拖动到发送、接收或关闭操作以绑定 Channel')} />
   </div>;
 }
 const nodeTypes = { operation: OperationNode, function: FunctionNode, resource: ResourceNode };
@@ -53,6 +57,7 @@ function FitImportedView({ request, expectedNodes }: { request: number; expected
 }
 interface Props { ir: ProgramIR; layout: Layout; fitRequest: number; selected: string | null; onSelect: (id: string) => void; onLayout: (layout: Layout) => void; onConnect: (statementId: string, symbolId: string) => void; onAdd: (kind: StatementKind, functionId: string) => void; onError: (message: string) => void; locked: boolean }
 export function Canvas({ ir, layout, fitRequest, selected, onSelect, onLayout, onConnect, onAdd, onError, locked }: Props) {
+  const { language, t } = useLanguage();
   const instance = useRef<ReactFlowInstance<VisualNode, Edge> | null>(null);
   const [ready, setReady] = useState(false);
   const projection = useMemo(() => {
@@ -63,15 +68,15 @@ export function Canvas({ ir, layout, fitRequest, selected, onSelect, onLayout, o
       const positions = fn.body.statements.map(s => ownValue(layout.nodes, s.id));
       const width = Math.max(325, ...positions.map(p => (p?.x ?? 28) + 295));
       const height = collapsed ? 78 : Math.max(205, ...positions.map(p => (p?.y ?? 90) + 112));
-      nodes.push({ id: fn.id, type: 'function', position: ownValue(layout.nodes, fn.id) ?? { x: i * 410, y: 30 }, data: { title: fn.kind === 'main' ? 'main' : `goroutine ${i}`, detail: fn.kind === 'main' ? '程序入口 · main goroutine' : `词法父级 · ${ir.functions.findIndex(f => f.id === fn.parentFunctionId) === 0 ? 'main' : `goroutine ${ir.functions.findIndex(f => f.id === fn.parentFunctionId)}`}`, collapsed, count: fn.body.statements.length, onToggle: () => onLayout({ ...layout, collapsed: { ...layout.collapsed, [fn.id]: !collapsed } }) }, style: { width, height }, selected: selected === fn.id, dragHandle: '.function-heading' });
+      nodes.push({ id: fn.id, type: 'function', position: ownValue(layout.nodes, fn.id) ?? { x: i * 410, y: 30 }, data: { title: fn.kind === 'main' ? 'main' : `goroutine ${i}`, detail: fn.kind === 'main' ? t('程序入口 · main goroutine') : `${language === 'en' ? 'Lexical parent' : '词法父级'} · ${ir.functions.findIndex(f => f.id === fn.parentFunctionId) === 0 ? 'main' : `goroutine ${ir.functions.findIndex(f => f.id === fn.parentFunctionId)}`}`, collapsed, count: fn.body.statements.length, onToggle: () => onLayout({ ...layout, collapsed: { ...layout.collapsed, [fn.id]: !collapsed } }) }, style: { width, height }, selected: selected === fn.id, dragHandle: '.function-heading' });
       nodeIds.add(fn.id);
       fn.body.statements.forEach((s, index) => {
-        nodes.push({ id: s.id, type: 'operation', parentId: fn.id, extent: 'parent', position: ownValue(layout.nodes, s.id) ?? { x: 28, y: 90 + index * 110 }, data: { title: labels[s.kind], detail: statementLabel(ir, s), kind: s.kind, index: index + 1 }, selected: selected === s.id, hidden: collapsed, style: { width: 270 } });
+        nodes.push({ id: s.id, type: 'operation', parentId: fn.id, extent: 'parent', position: ownValue(layout.nodes, s.id) ?? { x: 28, y: 90 + index * 110 }, data: { title: t(labels[s.kind]), detail: statementLabel(ir, s).replaceAll('未绑定', t('未绑定')), kind: s.kind, index: index + 1 }, selected: selected === s.id, hidden: collapsed, style: { width: 270 } });
         if (!collapsed) nodeIds.add(s.id);
         if (index > 0) edges.push({ id: `sequence:${s.id}`, source: fn.body.statements[index - 1].id, target: s.id, sourceHandle: 'sequence-out', targetHandle: 'sequence-in', type: 'smoothstep', style: { stroke: '#617077', strokeWidth: 1.4 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#617077', width: 12, height: 12 }, selectable: false });
-        if (s.kind === 'spawn') edges.push({ id: `spawn:${s.id}`, source: s.id, target: s.functionId, sourceHandle: 'spawn', targetHandle: 'spawn-in', type: 'smoothstep', label: 'go · 创建', style: { stroke: '#a494ed', strokeWidth: 1.6, strokeDasharray: '7 5' }, labelStyle: { fill: '#b8a4f5', fontSize: 10 }, labelBgStyle: { fill: '#161a23' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a494ed' }, selectable: false });
-        if ('channelSymbolId' in s && s.channelSymbolId) edges.push({ id: `reference:${s.id}`, source: s.channelSymbolId, target: s.id, sourceHandle: 'channel', targetHandle: 'channel', type: 'default', label: `引用 · ${labels[s.kind]}`, style: { stroke: '#68c8ac', strokeWidth: 1.3, strokeDasharray: '3 5' }, labelStyle: { fill: '#89c8b5', fontSize: 10 }, labelBgStyle: { fill: '#141c1c' }, reconnectable: 'source', selectable: true });
-        if (s.kind === 'make_channel') edges.push({ id: `resource-declaration:${s.id}`, source: s.symbolId, target: s.id, sourceHandle: 'channel', targetHandle: 'declaration', type: 'default', label: '创建位置', style: { stroke: '#41695d', strokeWidth: 1, strokeDasharray: '2 6' }, labelStyle: { fill: '#769d90', fontSize: 10 }, labelBgStyle: { fill: '#141c1c' }, selectable: false });
+        if (s.kind === 'spawn') edges.push({ id: `spawn:${s.id}`, source: s.id, target: s.functionId, sourceHandle: 'spawn', targetHandle: 'spawn-in', type: 'smoothstep', label: t('go · 创建'), style: { stroke: '#a494ed', strokeWidth: 1.6, strokeDasharray: '7 5' }, labelStyle: { fill: '#b8a4f5', fontSize: 10 }, labelBgStyle: { fill: '#161a23' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a494ed' }, selectable: false });
+        if ('channelSymbolId' in s && s.channelSymbolId) edges.push({ id: `reference:${s.id}`, source: s.channelSymbolId, target: s.id, sourceHandle: 'channel', targetHandle: 'channel', type: 'default', label: `${language === 'en' ? 'Reference' : '引用'} · ${t(labels[s.kind])}`, style: { stroke: '#68c8ac', strokeWidth: 1.3, strokeDasharray: '3 5' }, labelStyle: { fill: '#89c8b5', fontSize: 10 }, labelBgStyle: { fill: '#141c1c' }, reconnectable: 'source', selectable: true });
+        if (s.kind === 'make_channel') edges.push({ id: `resource-declaration:${s.id}`, source: s.symbolId, target: s.id, sourceHandle: 'channel', targetHandle: 'declaration', type: 'default', label: t('创建位置'), style: { stroke: '#41695d', strokeWidth: 1, strokeDasharray: '2 6' }, labelStyle: { fill: '#769d90', fontSize: 10 }, labelBgStyle: { fill: '#141c1c' }, selectable: false });
       });
     });
     ir.symbols.filter(sym => sym.type === 'chan int').forEach(sym => {
@@ -80,10 +85,10 @@ export function Canvas({ ir, layout, fitRequest, selected, onSelect, onLayout, o
       const count = ir.functions.flatMap(f => f.body.statements).filter(s => 'channelSymbolId' in s && s.channelSymbolId === sym.id).length;
       const id = sym.id;
       nodeIds.add(id);
-      nodes.push({ id, type: 'resource', position: ownValue(layout.nodes, id) ?? { x: 50, y: 600 }, data: { title: sym.name, detail: capacity === 0 ? '无缓冲 · unbuffered' : `缓冲容量 ${capacity}`, count }, selected: selected === id, style: { width: 270 } });
+      nodes.push({ id, type: 'resource', position: ownValue(layout.nodes, id) ?? { x: 50, y: 600 }, data: { title: sym.name, detail: capacity === 0 ? t('无缓冲 · unbuffered') : (language === 'en' ? `Buffer capacity ${capacity}` : `缓冲容量 ${capacity}`), count }, selected: selected === id, style: { width: 270 } });
     });
     return { nodes, edges: edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target)) };
-  }, [ir, layout, selected, onLayout]);
+  }, [ir, layout, selected, onLayout, language, t]);
   const [nodes, setNodes] = useState<VisualNode[]>(projection.nodes);
   useEffect(() => setNodes(current => {
     const previous = new Map(current.map(node => [node.id, node]));
@@ -110,7 +115,7 @@ export function Canvas({ ir, layout, fitRequest, selected, onSelect, onLayout, o
       <FitImportedView request={fitRequest} expectedNodes={JSON.stringify(projection.nodes.map(node => node.id))}/><Background variant={BackgroundVariant.Dots} color="#303b3e" gap={22} size={1} />
       <Controls showInteractive={false} position="bottom-left" />
     </ReactFlow>
-    <div className="canvas-legend"><span><i className="legend-line sequence"/>语句顺序</span><span><i className="legend-line spawn"/>并发创建</span><span><i className="legend-line channel"/>Channel 引用</span></div>
-    <div className="canvas-note">拖动调整布局 · 通过编号调整执行顺序</div>
+    <div className="canvas-legend"><span><i className="legend-line sequence"/>{t('语句顺序')}</span><span><i className="legend-line spawn"/>{t('并发创建')}</span><span><i className="legend-line channel"/>{t('Channel 引用')}</span></div>
+    <div className="canvas-note">{t('拖动调整布局 · 通过编号调整执行顺序')}</div>
   </div>;
 }

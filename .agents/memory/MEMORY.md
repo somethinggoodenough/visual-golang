@@ -1,0 +1,1 @@
+- [Replit toolchain order](toolchain-order.md) — multiple Go modules can select the older compiler; keep only a compatible one when local toolchains are enforced.
