@@ -23,4 +23,4 @@ function start(command, args, cwd, env = process.env) {
 process.on('SIGINT', () => stop());
 process.on('SIGTERM', () => stop());
 start(serverBinary, ['-static', ''], path.join(root, 'backend'), goEnv);
-start(npm, ['run', 'dev', '--', '--port', '5173', '--strictPort'], path.join(root, 'frontend'));
+start(npm, ['run', 'dev', '--', '--host', '0.0.0.0', '--port', '5000', '--strictPort'], path.join(root, 'frontend'));

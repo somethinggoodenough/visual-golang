@@ -24,7 +24,7 @@ npm --prefix frontend ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173**. The backend listens on `127.0.0.1:8080`, and Vite proxies `/api` requests to it. Press Ctrl+C to stop both processes. The first startup compiles the Go service, with its cache stored in `.cache/`.
+Open **http://127.0.0.1:5000** (or the Replit preview). The backend listens on `127.0.0.1:8080`, and Vite proxies `/api` requests to it. Press Ctrl+C to stop both processes. The first startup compiles the Go service, with its cache stored in `.cache/`.
 
 To build for production and run locally:
 
