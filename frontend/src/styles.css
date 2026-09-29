@@ -3,6 +3,6 @@
 @media(min-width:1600px){.toolbox{width:232px}.detail-panel{width:400px}.toolbar{padding:0 23px}.palette-item{height:62px}.toolbox-body{padding:23px 17px}.source-editor textarea{font-size:12px}.graph-count{font-size:10px}.canvas-legend{font-size:9px;gap:19px}}
 @media(max-width:1200px){.toolbox{width:191px}.detail-panel{width:315px}.toolbar{gap:7px;padding:0 11px}.toolbar-group>button:not(.icon-button){padding:7px 6px;gap:5px;font-size:10px}.header-center{font-size:10px}.brand{min-width:213px}.graph-count{display:none}.view-tag{display:none}.palette-item{gap:6px;padding-left:5px}.palette-icon{width:25px}.palette-item strong{font-size:9px}.palette-item code{font-size:8px}.canvas-legend{gap:8px;font-size:7px}.draft-footer{font-size:8px}.statusbar>div:last-child>span:last-child{display:none}}
 @media(max-height:850px){.palette-item{height:50px}.palette{gap:6px}.toolbox-body{padding-top:15px}.toolbox-hint{margin-top:13px}.toolbox-footer{height:51px}.diagnostics-panel{min-height:83px}.diagnostics-header{height:32px}.diagnostics-body{padding-top:6px;padding-bottom:6px}.app-header{height:65px}}
-.language-select{height:29px;min-width:82px;padding:0 6px;font-size:11px;color:#c4d6cd;border-color:#3b5048;background:#202c28}
-.language-select:focus-visible{outline:2px solid #99e2c8;outline-offset:2px}
+.language-toggle{height:29px;min-width:82px;padding:0 8px;font-size:11px;color:#c4d6cd;border:1px solid #3b5048;border-radius:5px;background:#202c28}
+.language-toggle:hover{background:#2a3b32;border-color:#648875}
 .header-right{gap:12px}

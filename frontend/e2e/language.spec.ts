@@ -5,7 +5,10 @@ test('switches between Chinese and English without changing the project', async 
   await expect(page.getByRole('button', { name: '已同步', exact: true })).toBeVisible();
   const source = await page.getByLabel('Go 源码').inputValue();
 
-  await page.getByRole('combobox', { name: '切换语言' }).selectOption('en');
+  const toEnglish = page.getByRole('button', { name: '切换语言' });
+  await expect(toEnglish).toHaveText('English');
+  await toEnglish.click();
+  await expect(page.getByRole('button', { name: 'Change language' })).toHaveText('中文');
   await expect(page.getByRole('button', { name: 'Synced', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open example' })).toBeVisible();
   await expect(page.locator('.operation-node.send')).toContainText('Send');
@@ -20,11 +23,12 @@ test('switches between Chinese and English without changing the project', async 
   await page.screenshot({ path: testInfo.outputPath('english.png') });
 
   await page.reload();
-  await expect(page.getByRole('combobox', { name: 'Change language' })).toHaveValue('en');
+  await expect(page.getByRole('button', { name: 'Change language' })).toHaveText('中文');
   await expect(page.getByRole('button', { name: 'Synced', exact: true })).toBeVisible();
   await expect(page.getByLabel('Go source')).toHaveValue(source);
 
-  await page.getByRole('combobox', { name: 'Change language' }).selectOption('zh');
+  await page.getByRole('button', { name: 'Change language' }).click();
+  await expect(page.getByRole('button', { name: '切换语言' })).toHaveText('English');
   await expect(page.getByRole('button', { name: '已同步', exact: true })).toBeVisible();
   await expect(page.getByLabel('Go 源码')).toHaveValue(source);
 });
