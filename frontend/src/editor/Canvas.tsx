@@ -16,7 +16,7 @@ function OperationNode({ data, selected }: NodeProps<VisualNode>) {
     <div className="operation-heading"><span className="operation-icon"><Icon size={15} /></span><span>{data.title}</span><small>{String(data.index).padStart(2, '0')}</small></div>
     <code>{data.detail}</code>
     <Handle type="source" position={Position.Bottom} id="sequence-out" isConnectable={false} className="sequence-handle" />
-    {['send', 'receive', 'close'].includes(data.kind!) && <Handle type="target" position={Position.Right} id="channel" className="channel-handle" title={t('从 Channel 资源拖动连接到此端口')} />}
+    {['send', 'receive', 'close'].includes(data.kind!) && <Handle type="target" position={Position.Right} id="channel" className={`channel-handle ${data.kind}-channel-handle`} title={t('从 Channel 资源拖动连接到此端口')} />}
     {data.kind === 'make_channel' && <Handle type="target" position={Position.Left} id="declaration" isConnectable={false} className="channel-handle" />}
     {data.kind === 'spawn' && <Handle type="source" position={Position.Right} id="spawn" isConnectable={false} className="spawn-handle" />}
   </div>;
@@ -75,7 +75,11 @@ export function Canvas({ ir, layout, fitRequest, selected, onSelect, onLayout, o
         if (!collapsed) nodeIds.add(s.id);
         if (index > 0) edges.push({ id: `sequence:${s.id}`, source: fn.body.statements[index - 1].id, target: s.id, sourceHandle: 'sequence-out', targetHandle: 'sequence-in', type: 'smoothstep', style: { stroke: '#617077', strokeWidth: 1.4 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#617077', width: 12, height: 12 }, selectable: false });
         if (s.kind === 'spawn') edges.push({ id: `spawn:${s.id}`, source: s.id, target: s.functionId, sourceHandle: 'spawn', targetHandle: 'spawn-in', type: 'smoothstep', label: t('go · 创建'), style: { stroke: '#a494ed', strokeWidth: 1.6, strokeDasharray: '7 5' }, labelStyle: { fill: '#b8a4f5', fontSize: 10 }, labelBgStyle: { fill: '#161a23' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a494ed' }, selectable: false });
-        if ('channelSymbolId' in s && s.channelSymbolId) edges.push({ id: `reference:${s.id}`, source: s.channelSymbolId, target: s.id, sourceHandle: 'channel', targetHandle: 'channel', type: 'default', label: `${language === 'en' ? 'Reference' : '引用'} · ${t(labels[s.kind])}`, style: { stroke: '#68c8ac', strokeWidth: 1.3, strokeDasharray: '3 5' }, labelStyle: { fill: '#89c8b5', fontSize: 10 }, labelBgStyle: { fill: '#141c1c' }, reconnectable: 'source', selectable: true });
+        if ('channelSymbolId' in s && s.channelSymbolId) {
+          const color = s.kind === 'send' ? '#d9a066' : s.kind === 'receive' ? '#6fa7d5' : '#68c8ac';
+          const labelColor = s.kind === 'send' ? '#e4b68f' : s.kind === 'receive' ? '#9bc2e5' : '#89c8b5';
+          edges.push({ id: `reference:${s.id}`, className: `reference-${s.kind}`, source: s.channelSymbolId, target: s.id, sourceHandle: 'channel', targetHandle: 'channel', type: 'default', label: `${language === 'en' ? 'Reference' : '引用'} · ${t(labels[s.kind])}`, style: { stroke: color, strokeWidth: 1.5, strokeDasharray: '3 5' }, labelStyle: { fill: labelColor, fontSize: 10 }, labelBgStyle: { fill: '#141c1c' }, reconnectable: 'source', selectable: true });
+        }
         if (s.kind === 'make_channel') edges.push({ id: `resource-declaration:${s.id}`, source: s.symbolId, target: s.id, sourceHandle: 'channel', targetHandle: 'declaration', type: 'default', label: t('创建位置'), style: { stroke: '#41695d', strokeWidth: 1, strokeDasharray: '2 6' }, labelStyle: { fill: '#769d90', fontSize: 10 }, labelBgStyle: { fill: '#141c1c' }, selectable: false });
       });
     });
@@ -115,7 +119,7 @@ export function Canvas({ ir, layout, fitRequest, selected, onSelect, onLayout, o
       <FitImportedView request={fitRequest} expectedNodes={JSON.stringify(projection.nodes.map(node => node.id))}/><Background variant={BackgroundVariant.Dots} color="#303b3e" gap={22} size={1} />
       <Controls showInteractive={false} position="bottom-left" />
     </ReactFlow>
-    <div className="canvas-legend"><span><i className="legend-line sequence"/>{t('语句顺序')}</span><span><i className="legend-line spawn"/>{t('并发创建')}</span><span><i className="legend-line channel"/>{t('Channel 引用')}</span></div>
+    <div className="canvas-legend"><span><i className="legend-line sequence"/>{t('语句顺序')}</span><span><i className="legend-line spawn"/>{t('并发创建')}</span><span><i className="legend-line channel-send"/>{t('发送引用')}</span><span><i className="legend-line channel-receive"/>{t('接收引用')}</span><span><i className="legend-line channel-close"/>{t('关闭引用')}</span></div>
     <div className="canvas-note">{t('拖动调整布局 · 通过编号调整执行顺序')}</div>
   </div>;
 }

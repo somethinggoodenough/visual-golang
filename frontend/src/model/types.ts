@@ -15,7 +15,7 @@ export interface SymbolIR { id: string; name: string; type: ValueType; scopeId: 
 export interface ProgramIR { schemaVersion: '1.0'; id: string; packageName: 'main'; entryFunctionId: string; functions: FunctionIR[]; symbols: SymbolIR[] }
 export interface SourceSpan { file: 'main.go'; startByte: number; endByte: number; startLine: number; startColumn: number }
 export type SourceMap = Record<string, SourceSpan>;
-export interface Diagnostic { code: string; severity: 'error' | 'warning' | 'info'; phase: 'parse' | 'types' | 'subset' | 'ir' | 'generate' | 'build'; message: string; nodeId?: string; span?: SourceSpan }
+export interface Diagnostic { code: string; severity: 'error' | 'warning' | 'info'; phase: 'parse' | 'types' | 'subset' | 'ir' | 'generate' | 'build' | 'run' | 'trace' | 'analysis'; message: string; nodeId?: string; span?: SourceSpan }
 export interface Layout { nodes: Record<string, { x: number; y: number }>; viewport: { x: number; y: number; zoom: number }; collapsed: Record<string, boolean> }
 export interface Project { fileFormatVersion: '1.0'; programRevision: number; ir: ProgramIR; layout: Layout; source: string; sourceHash: string; sourceMap: SourceMap; originalImportedSource?: string }
 export interface APIResult { requestId: string; status: string; programRevision?: number; ir?: ProgramIR; source?: string; sourceHash?: string; sourceMap?: SourceMap; diagnostics?: Diagnostic[]; project?: Project; toolchainVersion?: string; durationMs?: number }

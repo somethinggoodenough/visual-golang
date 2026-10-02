@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Project } from '../src/model/types';
+import { fillSource, selectedSource, sourceValue } from './source-editor';
 
 async function boot(page: Page) {
   await page.goto('/');
@@ -41,7 +42,7 @@ test('导入 → 42 改为 100 → 真实编译 → Go 往返 → 项目恢复',
   const generated = await applyGraph(page);
   expect(generated.source).toContain('ch <- 100');
   await page.getByRole('button', { name: '源码', exact: true }).click();
-  await expect(page.getByLabel('Go 源码')).toHaveValue(generated.source);
+  await expect.poll(() => sourceValue(page)).toBe(generated.source);
 
   const compiled = page.waitForResponse(r => r.url().endsWith('/api/build'));
   await page.getByRole('button', { name: '编译验证', exact: true }).click();
@@ -111,7 +112,7 @@ test('从空项目添加、连接、排序节点并生成同样的程序', async
   await expect(page.locator('.diagnostic.error').first()).toBeVisible();
   await page.getByRole('button', { name: '放弃草稿', exact: true }).click();
   await page.getByRole('button', { name: '源码', exact: true }).click();
-  await expect(page.getByLabel('Go 源码')).toHaveValue(/make\(chan int, 1\)/);
+  await expect.poll(() => sourceValue(page)).toMatch(/make\(chan int, 1\)/);
 });
 
 test('布局拖动不改变源码，错误源码保留有效模型，Unicode 双向定位正确', async ({ page }) => {
@@ -130,25 +131,27 @@ test('布局拖动不改变源码，错误源码保留有效模型，Unicode 双
 
   await page.locator('.operation-node.send').click();
   await page.getByRole('button', { name: '源码', exact: true }).click();
-  const editor = page.getByLabel('Go 源码');
-  await expect.poll(() => editor.evaluate((e: HTMLTextAreaElement) => e.value.slice(e.selectionStart, e.selectionEnd))).toBe('ch <- 42');
-  await editor.evaluate((e: HTMLTextAreaElement) => { const i = e.value.indexOf('fmt.Println'); e.focus(); e.setSelectionRange(i, i); e.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+  const editor = page.locator('.detail-panel .monaco-editor textarea');
+  await expect.poll(() => selectedSource(page)).toBe('ch <- 42');
+  await editor.focus();
+  await editor.press('ControlOrMeta+Home');
+  for (let line = 0; line < 7; line++) await editor.press('ArrowDown');
+  await editor.press('Home');
   await expect(page.locator('.react-flow__node.selected .operation-node.print')).toBeVisible();
-  await editor.fill('package main\nfunc main() { missing() }');
+  await fillSource(page, 'package main\nfunc main() { missing() }');
   const failed = page.waitForResponse(r => r.url().endsWith('/api/import'));
   await page.getByRole('button', { name: '应用代码修改', exact: true }).click();
   expect((await (await failed).json()).status).toBe('invalid');
   await expect(page.locator('.operation-node.send')).toContainText('42');
   await expect(page.locator('.sync-bar')).toContainText('最近有效图形');
   await expect(page.getByRole('button', { name: '编译验证', exact: true })).toBeDisabled();
-  await expect(editor).toHaveValue(/missing/);
+  await expect.poll(() => sourceValue(page)).toMatch(/missing/);
   await page.getByRole('button', { name: '放弃草稿', exact: true }).click();
-  await expect(editor).toHaveValue(source);
+  await expect.poll(() => sourceValue(page)).toBe(source);
 });
 
 test('过期转换响应不覆盖较新的源码草稿', async ({ page }) => {
   await boot(page);
-  const editor = page.getByLabel('Go 源码');
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   let received!: () => void;
@@ -157,14 +160,14 @@ test('过期转换响应不覆盖较新的源码草稿', async ({ page }) => {
     const response = await route.fetch();
     received(); await gate; await route.fulfill({ response });
   });
-  await editor.fill('package main\nfunc main(){ return }');
+  await fillSource(page, 'package main\nfunc main(){ return }');
   await page.getByRole('button', { name: '应用代码修改', exact: true }).click();
   await waiting;
   const newer = 'package main\nfunc main(){ /* 新草稿 */ }';
-  await editor.fill(newer);
+  await fillSource(page, newer);
   const responseDone = page.waitForResponse(r => r.url().endsWith('/api/import'));
   release(); await responseDone;
-  await expect(editor).toHaveValue(newer);
+  await expect.poll(() => sourceValue(page)).toBe(newer);
   await expect(page.locator('.operation-node.send')).toContainText('42');
   await expect(page.locator('.sync-bar')).toContainText('最近有效图形');
 });

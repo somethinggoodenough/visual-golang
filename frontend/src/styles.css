@@ -6,3 +6,4 @@
 .language-toggle{height:29px;min-width:82px;padding:0 8px;font-size:11px;color:#c4d6cd;border:1px solid #3b5048;border-radius:5px;background:#202c28}
 .language-toggle:hover{background:#2a3b32;border-color:#648875}
 .header-right{gap:12px}
+.react-flow__handle.send-channel-handle{background:#d9a066;border-color:#4a3525}.react-flow__handle.receive-channel-handle{background:#6fa7d5;border-color:#233b50}.legend-line.channel-send{border-top-style:dotted;border-color:#d9a066;border-top-width:2px}.legend-line.channel-receive{border-top-style:dotted;border-color:#6fa7d5;border-top-width:2px}.legend-line.channel-close{border-top-style:dotted;border-color:#68c8ac;border-top-width:2px}

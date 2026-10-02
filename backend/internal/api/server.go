@@ -10,14 +10,19 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"goviz/backend/internal/compiler"
 	"goviz/backend/internal/engine"
+	"goviz/backend/internal/runner"
 )
 
 const maxRequestBytes = 4 << 20
 
-type Server struct{ Compiler *compiler.Compiler }
+type Server struct {
+	Compiler *compiler.Compiler
+	Runner   *runner.Runner
+}
 
 type request struct {
 	RequestID       string          `json:"requestId"`
@@ -25,6 +30,7 @@ type request struct {
 	Source          string          `json:"source"`
 	IR              *engine.Program `json:"ir"`
 	Project         *Project        `json:"project"`
+	Trace           bool            `json:"trace,omitempty"`
 }
 type conversionResponse struct {
 	RequestID       string `json:"requestId"`
@@ -39,6 +45,15 @@ type buildResponse struct {
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/format", formatSource)
+	localRunner := s.Runner
+	if localRunner == nil {
+		localRunner = runner.New(s.Compiler.Timeout, 5*time.Second)
+		localRunner.GoPath = s.Compiler.GoPath
+	}
+	mux.HandleFunc("POST /api/analyze", analyzeSource)
+	mux.HandleFunc("POST /api/run", executeSource(localRunner, false))
+	mux.HandleFunc("POST /api/build-source", executeSource(localRunner, true))
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		version, available := s.Compiler.Version(r.Context())
 		write(w, http.StatusOK, map[string]any{"requestId": r.URL.Query().Get("requestId"), "status": "ok", "goAvailable": available, "goVersion": version, "limits": map[string]int{"maxNodes": engine.MaxNodes, "maxCapacity": engine.MaxCapacity}})

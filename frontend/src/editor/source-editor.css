@@ -1,0 +1,6 @@
+.monaco-source-editor { position: relative; flex: 1; min-height: 0; width: 100%; overflow: hidden; }
+.monaco-source-host { position: absolute; inset: 0; }
+.monaco-source-editor .go-source-linked-range { background: #426c5648; border-bottom: 1px solid #88b999; }
+.source-file .source-actions { display: flex; align-items: center; gap: 10px; }
+.source-file .format-source-button { color: #b3ccba; font-size: 10px; padding: 3px 5px; border: 1px solid #3c5141; border-radius: 4px; }
+.source-file .format-source-button:hover:not(:disabled) { background: #293d31; }
